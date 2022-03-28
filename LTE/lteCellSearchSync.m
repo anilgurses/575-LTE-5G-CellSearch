@@ -1,4 +1,4 @@
-function res = lteCellSearchSync(CellID)
+function res = lteCellSearchSync(CellID, subframes)
 
 %% Cell Search, MIB and SIB1 Recovery 
 % This example shows how to fully synchronize, demodulate and decode a live
@@ -86,7 +86,7 @@ if loadFromFile
 else
     rmc = lteRMCDL('R.3'); %#ok<UNRCH>
     rmc.NCellID = CellID;
-    rmc.TotSubframes = 41;
+    rmc.TotSubframes = 41; % Resource 
     rmc.PDSCH.RNTI = 61;
     % SIB parameters
     rmc.SIB.Enable = 'On';
@@ -140,6 +140,7 @@ end
 
 % Display received signal spectrum
 fprintf('\nPlotting received signal spectrum...\n');
+% Diversity, Air interface we need to make changes here
 spectrumAnalyzer(awgn(eNodeBOutput, 100.0));
 
 if (sr~=ofdmInfo.SamplingRate)
