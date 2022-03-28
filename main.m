@@ -1,8 +1,11 @@
 addpath('./LTE');
 addpath('./5G');
 
-% For LTE
-%lteCellSearchSync(17);
 
-% For 5G
-NRCellSearchSync(102);
+mode = "LTE";
+
+if mode == "LTE"
+    lteCellSearchSync(17);
+else
+    NRCellSearchSync(102);
+end
