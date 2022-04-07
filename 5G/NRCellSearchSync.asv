@@ -1,4 +1,4 @@
-function res = NRCellSearchSync(config, ssbIdx, boost, nrbSSB, SNRdB)
+function res = NRCellSearchSync(config)
 
     %% NR Cell Search and MIB and SIB1 Recovery
     %
@@ -95,6 +95,7 @@ function res = NRCellSearchSync(config, ssbIdx, boost, nrbSSB, SNRdB)
         refBurst.L_max = rx.L_max;
     else
  
+   
         
         % Configure and generate a waveform containing an SS burst and SIB1
         wavegenConfig = hSIB1WaveformConfiguration(config);
@@ -103,12 +104,13 @@ function res = NRCellSearchSync(config, ssbIdx, boost, nrbSSB, SNRdB)
         
         % Introduce a beamforming gain by boosting the SNR of one SSB and
         % associated SIB1 PDCCH and PDSCH
-
+        ssbIdx = 0; % Index of the SSB to boost (0-based)
+        boost = 6; % SNR boost in dB
         txWaveform = hSIB1Boost(txWaveform,wavegenConfig,waveInfo,ssbIdx,boost);
         
         % Add white Gaussian noise to the waveform
         rng('default'); % Reset the random number generator
-        
+        SNRdB = 20; % SNR for AWGN
         rxWaveform = awgn(txWaveform,SNRdB-boost,-10*log10(double(txOfdmInfo.Nfft)));
         
         % Configure receiver
@@ -129,7 +131,7 @@ function res = NRCellSearchSync(config, ssbIdx, boost, nrbSSB, SNRdB)
     end
     
     % Get OFDM information from configured burst and receiver parameters
-    
+    nrbSSB = 20;
     scsSSB = hSSBurstSubcarrierSpacing(refBurst.BlockPattern);
     rxOfdmInfo = nrOFDMInfo(nrbSSB,scsSSB,'SampleRate',rxSampleRate);
     

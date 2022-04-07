@@ -1,4 +1,4 @@
-function res = lteCellSearchSync(CellID, subframes)
+function res = lteCellSearchSync(resBlk,rmc, chModel, snr)
 
 %% Cell Search, MIB and SIB1 Recovery 
 % This example shows how to fully synchronize, demodulate and decode a live
@@ -84,20 +84,6 @@ if loadFromFile
     eNodeBOutput = double(eNodeBOutput)/32768; % Scale samples
     sr = 15.36e6;                   % Sampling rate for loaded samples
 else
-    rmc = lteRMCDL('R.3'); %#ok<UNRCH>
-    rmc.NCellID = CellID;
-    rmc.TotSubframes = 41; % Resource 
-    rmc.PDSCH.RNTI = 61;
-    % SIB parameters
-    rmc.SIB.Enable = 'On';
-    rmc.SIB.DCIFormat = 'Format1A';
-    rmc.SIB.AllocationType = 0;
-    rmc.SIB.VRBStart = 8;
-    rmc.SIB.VRBLength = 8;
-    rmc.SIB.Gap = 0;
-    % SIB data field filled with random bits, this is not a valid SIB
-    % message
-    rmc.SIB.Data = randi([0 1],176,1);
     [eNodeBOutput,~,info] = lteRMCDLTool(rmc,[1;0;0;1]);
     sr = info.SamplingRate;     % Sampling rate of generated samples
 end
@@ -130,7 +116,7 @@ pdschEVM.MaximumEVMOutputPort = true;
 % temporarily in the call to lteOFDMInfo to suppress a default value
 % warning (it does not affect the sampling rate).
 enb = struct;                   % eNodeB config structure
-enb.NDLRB = 6;                  % Number of resource blocks
+enb.NDLRB = resBlk;                  % Number of resource blocks
 ofdmInfo = lteOFDMInfo(setfield(enb,'CyclicPrefix','Normal')); %#ok<SFLD>
 
 if (isempty(eNodeBOutput))
@@ -141,7 +127,25 @@ end
 % Display received signal spectrum
 fprintf('\nPlotting received signal spectrum...\n');
 % Diversity, Air interface we need to make changes here
-spectrumAnalyzer(awgn(eNodeBOutput, 100.0));
+
+if (chModel == "rayleigh")
+    rayleighchan = comm.RayleighChannel( ...
+        'SampleRate',info.SamplingRate, ...
+        'PathDelays',[0 1.5e-4], ...
+        'AveragePathGains',[2 3], ...
+        'NormalizePathGains',true, ...
+        'MaximumDopplerShift',30, ...
+        'DopplerSpectrum',{doppler('Gaussian',0.6),doppler('Flat')}, ...
+        'RandomStream','mt19937ar with seed', ...
+        'Seed',22, ...
+        'PathGainsOutputPort',true);
+    
+    [eNodeBOutput,~] = rayleighchan(eNodeBOutput);
+else
+    eNodeBOutput = awgn(eNodeBOutput, snr);
+end
+
+spectrumAnalyzer(eNodeBOutput);
 
 if (sr~=ofdmInfo.SamplingRate)
     if (sr < ofdmInfo.SamplingRate)
