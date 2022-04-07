@@ -287,8 +287,7 @@ downsampled = lteFrequencyCorrect(enb, downsampled, delta_f);
 
 
 if(guiEnabled)
-    rxLamp.Color = "1.00,0.00,0.00";
-    decodeLamp.Color = "0.00,1.00,0.00";
+    rxLamp.Color = "1.00,1.00,0.00";
 end
 
 %% OFDM Demodulation and Channel Estimation  
@@ -624,12 +623,6 @@ while (size(rxgrid,2) > 0)
     enb.NFrame = mod(enb.NFrame + 2,1024);
         
 end
-
-
-if(guiEnabled)
-    decodeLamp.Color = "1.00,0.00,0.00";
-end
-
 end
 %% Appendix
 % This example uses these helper functions.
