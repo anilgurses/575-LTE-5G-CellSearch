@@ -1,0 +1,136 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration file="/home/anilg/Desktop/ECE575/project/ECE575Project.prj" location="/home/anilg/Desktop/ECE575/project" name="ECE575Project" target="target.ezdeploy.standalone" target-name="Application Compiler">
+    <param.appname>ECE575Project</param.appname>
+    <param.icon />
+    <param.icons />
+    <param.version>1.0</param.version>
+    <param.authnamewatermark />
+    <param.email />
+    <param.company />
+    <param.summary />
+    <param.description />
+    <param.screenshot />
+    <param.guid />
+    <param.installpath.string>/ECE575Project/</param.installpath.string>
+    <param.installpath.combo>option.installpath.user</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.target.install.notes />
+    <param.intermediate>${PROJECT_ROOT}/ECE575Project/for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}/ECE575Project/for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}/ECE575Project/for_redistribution</param.output>
+    <param.logdir>${PROJECT_ROOT}/ECE575Project</param.logdir>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>false</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file />
+    <param.native.matlab>false</param.native.matlab>
+    <param.checkbox>false</param.checkbox>
+    <param.example />
+    <param.help.text />
+    <unset>
+      <param.icon />
+      <param.icons />
+      <param.version />
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.summary />
+      <param.description />
+      <param.screenshot />
+      <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
+      <param.logo />
+      <param.install.notes />
+      <param.target.install.notes />
+      <param.intermediate />
+      <param.files.only />
+      <param.output />
+      <param.logdir />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.windows.command.prompt />
+      <param.create.log />
+      <param.log.file />
+      <param.native.matlab />
+      <param.checkbox />
+      <param.example />
+      <param.help.text />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}/main.mlapp</file>
+    </fileset.main>
+    <fileset.resources />
+    <fileset.package />
+    <fileset.depfun />
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}/ECE575Project/for_testing" name="run_ECE575Project.sh" optional="false">/home/anilg/Desktop/ECE575/project/ECE575Project/for_testing/run_ECE575Project.sh</file>
+      <file location="${PROJECT_ROOT}/ECE575Project/for_testing" name="ECE575Project" optional="false">/home/anilg/Desktop/ECE575/project/ECE575Project/for_testing/ECE575Project</file>
+      <file location="${PROJECT_ROOT}/ECE575Project/for_testing" name="readme.txt" optional="true">/home/anilg/Desktop/ECE575/project/ECE575Project/for_testing/readme.txt</file>
+      <file location="${PROJECT_ROOT}/ECE575Project/for_testing" name="splash.png" optional="false">/home/anilg/Desktop/ECE575/project/ECE575Project/for_testing/splash.png</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>/usr/local/MATLAB/R2022a</root>
+      <toolboxes>
+        <toolbox name="matlabcoder" />
+        <toolbox name="fixedpoint" />
+        <toolbox name="matlabhdlcoder" />
+        <toolbox name="neuralnetwork" />
+      </toolboxes>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+      <toolbox>
+        <matlabhdlcoder>
+          <enabled>true</enabled>
+        </matlabhdlcoder>
+      </toolbox>
+      <toolbox>
+        <neuralnetwork>
+          <enabled>true</enabled>
+        </neuralnetwork>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>true</unix>
+      <mac>false</mac>
+      <windows>false</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>true</linux>
+      <solaris>false</solaris>
+      <osver>5.16.18-200.fc35.x86_64</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>glnxa64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

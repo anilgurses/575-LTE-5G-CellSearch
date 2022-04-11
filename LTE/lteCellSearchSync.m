@@ -59,7 +59,6 @@ function res = lteCellSearchSync(resBlk,rmc, chModel, snr, guiEnabled, txLamp, r
 % Alternatively, a suitable LTE signal can be generated using the
 % LTE Toolbox. This can be controlled by the variable |loadFromFile|.
 
-loadFromFile = 0; % Set to 0 to generate the eNodeB output locally
 
 %%
 % The MIB corresponds to one BCH transport block. The BCH Transmission Time
@@ -79,14 +78,9 @@ loadFromFile = 0; % Set to 0 to generate the eNodeB output locally
 % an even frame), but up to 81 subframes of capture are required if signal
 % conditions are such that all RVs need to be combined. 
 
-if loadFromFile
-    load eNodeBOutput.mat           % Load I/Q capture of eNodeB output
-    eNodeBOutput = double(eNodeBOutput)/32768; % Scale samples
-    sr = 15.36e6;                   % Sampling rate for loaded samples
-else
-    [eNodeBOutput,~,info] = lteRMCDLTool(rmc,[1;0;0;1]);
-    sr = info.SamplingRate;     % Sampling rate of generated samples
-end
+[eNodeBOutput,~,info] = lteRMCDLTool(rmc,[1;0;0;1]);
+sr = info.SamplingRate;     % Sampling rate of generated samples
+
 
 %%
 % Prior to decoding the MIB, the UE does not know the full system

@@ -19,7 +19,7 @@ if mode == "LTE"
     % SIB data field filled with random bits, this is not a valid SIB
     % message
     rmc.SIB.Data = randi([0 1],176,1);
-    lteCellSearchSync(6,rmc, 'awgn', 30, false);
+    lteCellSearchSync(6,rmc, 'awgn', 30, false, nan, nan);
 
 else
     config = struct();
