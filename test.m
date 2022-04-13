@@ -19,8 +19,7 @@ if mode == "LTE"
     % SIB data field filled with random bits, this is not a valid SIB
     % message
     rmc.SIB.Data = randi([0 1],176,1);
-    lteCellSearchSync(6,rmc, 'awgn', 30, false);
-
+    lteCellSearchSync(6,rmc, 'awgn', [], [], 30, false);
 else
     config = struct();
     config.NCellID = 102;
@@ -40,5 +39,5 @@ else
     nrbSSB = 20;
     SNRdB = 20; % SNR for AWGN
 
-    NRCellSearchSync(config,ssbIdx, boost, nrbSSB, SNRdB);
+    NRCellSearchSync(config, 'awgn', ssbIdx, boost, nrbSSB, SNRdB);
 end

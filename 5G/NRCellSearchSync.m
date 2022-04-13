@@ -1,4 +1,4 @@
-function res = NRCellSearchSync(config, ssbIdx, boost, nrbSSB, SNRdB)
+function res = NRCellSearchSync(config, chModel, ssbIdx, boost, nrbSSB, SNRdB)
 
     %% NR Cell Search and MIB and SIB1 Recovery
     %
@@ -69,64 +69,52 @@ function res = NRCellSearchSync(config, ssbIdx, boost, nrbSSB, SNRdB)
     % knows the value of $L_{max}$ based on the SS block pattern and the NR
     % operating band.
     
-    loadFromFile = 0; % Set to 1 to load a captured waveform
+    % Configure and generate a waveform containing an SS burst and SIB1
+    wavegenConfig = hSIB1WaveformConfiguration(config);
+    [txWaveform,waveInfo] = nrWaveformGenerator(wavegenConfig);
+    txOfdmInfo = waveInfo.ResourceGrids(1).Info;
     
-    if loadFromFile
-        % Load captured waveform
-        rx = load('capturedWaveformSIB1.mat');
-        rxWaveform = rx.waveform;
-        
-        % Configure receiver sample rate (samples/second)
-        rxSampleRate = rx.sampleRate;
-        
-        % Symbol phase compensation frequency. Specify the carrier center
-        % frequency or set to 0 to disable symbol phase compensation
-        fPhaseComp = rx.fPhaseComp; % Carrier center frequency (Hz)
-        
-        % Set the minimum channel bandwidth for the NR band required to
-        % configure CORESET 0 in FR1 (See TS 38.101-1 Table 5.3.5-1)
-        minChannelBW = rx.minChannelBW; % 5, 10, 40 MHz
-        
-        % Configure necessary burst parameters at the receiver. The SSB pattern
-        % can be 'Case A','Case B','Case C' for FR1 or 'Case D','Case E' for
-        % FR2. The maximum number of blocks L_max can be 4 or 8 for FR1 and 64
-        % for FR2.
-        refBurst.BlockPattern = rx.ssbBlockPattern; 
-        refBurst.L_max = rx.L_max;
-    else
- 
-        
-        % Configure and generate a waveform containing an SS burst and SIB1
-        wavegenConfig = hSIB1WaveformConfiguration(config);
-        [txWaveform,waveInfo] = nrWaveformGenerator(wavegenConfig);
-        txOfdmInfo = waveInfo.ResourceGrids(1).Info;
-        
-        % Introduce a beamforming gain by boosting the SNR of one SSB and
-        % associated SIB1 PDCCH and PDSCH
+    % Introduce a beamforming gain by boosting the SNR of one SSB and
+    % associated SIB1 PDCCH and PDSCH
 
-        txWaveform = hSIB1Boost(txWaveform,wavegenConfig,waveInfo,ssbIdx,boost);
+    txWaveform = hSIB1Boost(txWaveform,wavegenConfig,waveInfo,ssbIdx,boost);
+    
+    % Add white Gaussian noise to the waveform
+    rng('default'); % Reset the random number generator
+
+    if (chModel == "rayleigh")
+        rayleighch = comm.RayleighChannel( ...
+            'SampleRate',info.SamplingRate, ...
+            'PathDelays',pathDelays, ...
+            'AveragePathGains',pathGains, ...
+            'NormalizePathGains',true, ...
+            'MaximumDopplerShift',30, ...
+            'DopplerSpectrum',{doppler('Gaussian',0.6),doppler('Flat')}, ...
+            'RandomStream','mt19937ar with seed', ...
+            'Seed',22, ...
+            'PathGainsOutputPort',true);
         
-        % Add white Gaussian noise to the waveform
-        rng('default'); % Reset the random number generator
-        
-        rxWaveform = awgn(txWaveform,SNRdB-boost,-10*log10(double(txOfdmInfo.Nfft)));
-        
-        % Configure receiver
-        % Sample rate
-        rxSampleRate = txOfdmInfo.SampleRate;
-        
-        % Symbol phase compensation frequency (Hz). The function
-        % nrWaveformGenerator does not apply symbol phase compensation to the
-        % generated waveform.
-        fPhaseComp = 0; % Carrier center frequency (Hz)
-        
-        % Minimum channel bandwidth (MHz)
-        minChannelBW = config.MinChannelBW;
-        
-        % Configure necessary burst parameters at the receiver
-        refBurst.BlockPattern = config.BlockPattern;
-        refBurst.L_max = numel(config.TransmittedBlocks);
+        [rxWaveform,~] = rayleighch(txWaveform);
+    else
+        rxWaveform = awgn(txWaveform, SNRdB-boost,-10*log10(double(txOfdmInfo.Nfft)));
     end
+    
+    % Configure receiver
+    % Sample rate
+    rxSampleRate = txOfdmInfo.SampleRate;
+    
+    % Symbol phase compensation frequency (Hz). The function
+    % nrWaveformGenerator does not apply symbol phase compensation to the
+    % generated waveform.
+    fPhaseComp = 0; % Carrier center frequency (Hz)
+    
+    % Minimum channel bandwidth (MHz)
+    minChannelBW = config.MinChannelBW;
+    
+    % Configure necessary burst parameters at the receiver
+    refBurst.BlockPattern = config.BlockPattern;
+    refBurst.L_max = numel(config.TransmittedBlocks);
+   
     
     % Get OFDM information from configured burst and receiver parameters
     

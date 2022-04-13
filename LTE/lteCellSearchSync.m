@@ -1,4 +1,4 @@
-function res = lteCellSearchSync(resBlk,rmc, chModel, snr, guiEnabled, txLamp, rxLamp, decodeLamp)
+function res = lteCellSearchSync(resBlk,rmc, chModel, pathDelays, pathGains, snr, guiEnabled, txLamp, rxLamp, decodeLamp)
 
 %% Cell Search, MIB and SIB1 Recovery 
 % This example shows how to fully synchronize, demodulate and decode a live
@@ -97,7 +97,7 @@ sr = info.SamplingRate;     % Sampling rate of generated samples
 separator = repmat('-',1,50);
 % plots
 if (~exist('channelFigure','var') || ~isvalid(channelFigure))
-    channelFigure = figure('Visible','off');        
+    channelFigure = figure('Visible','on');        
 end
 [spectrumAnalyzer,synchCorrPlot,pdcchConstDiagram] = ...
     hSIB1RecoveryExamplePlots(channelFigure,sr);
@@ -123,10 +123,10 @@ fprintf('\nPlotting received signal spectrum...\n');
 % Diversity, Air interface we need to make changes here
 
 if (chModel == "rayleigh")
-    rayleighchan = comm.RayleighChannel( ...
+    rayleighch = comm.RayleighChannel( ...
         'SampleRate',info.SamplingRate, ...
-        'PathDelays',[0 1.5e-4], ...
-        'AveragePathGains',[2 3], ...
+        'PathDelays',pathDelays, ...
+        'AveragePathGains',pathGains, ...
         'NormalizePathGains',true, ...
         'MaximumDopplerShift',30, ...
         'DopplerSpectrum',{doppler('Gaussian',0.6),doppler('Flat')}, ...
@@ -134,7 +134,7 @@ if (chModel == "rayleigh")
         'Seed',22, ...
         'PathGainsOutputPort',true);
     
-    [eNodeBOutput,~] = rayleighchan(eNodeBOutput);
+    [eNodeBOutput,~] = rayleighch(eNodeBOutput);
 else
     eNodeBOutput = awgn(eNodeBOutput, snr);
 end
@@ -354,6 +354,10 @@ pbchIndices = ltePBCHIndices(enb);
 [bchBits, pbchSymbols, nfmod4, mib, enb.CellRefP] = ltePBCHDecode( ...
     enb, pbchRx, pbchHest, nest); 
 
+
+
+res = struct();
+
 % Parse MIB bits
 enb = lteMIB(mib, enb); 
 
@@ -365,6 +369,7 @@ enb.NFrame = enb.NFrame+nfmod4;
 % Display cell wide settings after MIB decoding
 fprintf('Cell-wide settings after MIB decoding:\n');
 disp(enb);
+res.enb = enb;
 
 if (enb.CellRefP==0)
     fprintf('MIB decoding failed (enb.CellRefP=0).\n\n');
@@ -463,6 +468,7 @@ end
 % Reset the HARQ buffers
 decState = [];
 
+
 % While we have more data left, attempt to decode SIB1
 while (size(rxgrid,2) > 0)
 
@@ -498,7 +504,8 @@ while (size(rxgrid,2) > 0)
         release(pdcchConstDiagram);
     end
     enb.CFI = cfi;
-    fprintf('Decoded CFI value: %d\n\n', enb.CFI);   
+    fprintf('Decoded CFI value: %d\n\n', enb.CFI);
+    res.CFI = enb.CFI;
     
     % For TDD, the PDCCH must be decoded blindly across possible values of 
     % the PHICH configuration factor m_i (0,1,2) in TS36.211 Table 6.9-1.
@@ -555,6 +562,7 @@ while (size(rxgrid,2) > 0)
             pdsch.NTurboDecIts = 5;
             fprintf('PDSCH settings after DCI decoding:\n');
             disp(pdsch);
+            res.pdsch = pdsch;
 
             % PDSCH demodulation and DL-SCH decoding to recover SIB bits.
             % The DCI message is now parsed to give the configuration of
@@ -573,7 +581,7 @@ while (size(rxgrid,2) > 0)
                 fprintf('Recombining with previous transmission.\n\n');
             end        
             [sib1, crc, decState] = lteDLSCHDecode(enb, pdsch, trblklen, dlschBits, decState);
-
+            
             % Compute PDSCH EVM
             recoded = lteDLSCH(enb, pdsch, pdschIndicesInfo.G, sib1);
             remod = ltePDSCH(enb, pdsch, recoded);
@@ -581,7 +589,9 @@ while (size(rxgrid,2) > 0)
             [rmsevm,peakevm] = pdschEVM(refSymbols{1}, pdschSymbols{1});
             fprintf('PDSCH RMS EVM: %0.3f%%\n',rmsevm);
             fprintf('PDSCH Peak EVM: %0.3f%%\n\n',peakevm);
-
+            res.rmsEVM = rmsevm;
+            res.peakEVM = peakevm;
+            res.sibCrc = crc;
             fprintf('SIB1 CRC: %d\n',crc);
             if crc == 0
                 fprintf('Successful SIB1 recovery.\n\n');
@@ -602,12 +612,13 @@ while (size(rxgrid,2) > 0)
     end
     
     % Update channel estimate plot 
-    figure(channelFigure);
-    surf(abs(hest(:,:,1,1)));
-    hSIB1RecoveryExamplePlots(channelFigure);
-    channelFigure.CurrentAxes.XLim = [0 size(hest,2)+1];
-    channelFigure.CurrentAxes.YLim = [0 size(hest,1)+1];   
-    
+    if (size(rxgrid,2) > 0)
+        figure(channelFigure);
+        surf(abs(hest(:,:,1,1)));
+        hSIB1RecoveryExamplePlots(channelFigure);
+        channelFigure.CurrentAxes.XLim = [0 size(hest,2)+1];
+        channelFigure.CurrentAxes.YLim = [0 size(hest,1)+1];   
+    end
     % Skip 2 frames and try SIB1 decoding again, or terminate if we
     % have less than 2 frames left. 
     if (size(rxgrid,2)>=(L*20))
@@ -623,6 +634,11 @@ end
 if(guiEnabled)
     decodeLamp.Color = "1.00,0.00,0.00";
 end
+
+date = datestr(now,'mmmm-dd-yyyy-HH:MM');
+fname = sprintf("Results/LTE/%s-result.mat",date);
+
+save(fname);
 
 end
 %% Appendix
