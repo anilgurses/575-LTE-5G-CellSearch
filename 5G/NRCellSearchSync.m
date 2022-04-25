@@ -1,4 +1,4 @@
-function res = NRCellSearchSync(config, chModel, ssbIdx, boost, nrbSSB, SNRdB)
+function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, pathGains, ssbIdx, boost, nrbSSB, SNRdB, guiEnabled, txLamp, rxLamp, decodeLamp)
 
     %% NR Cell Search and MIB and SIB1 Recovery
     %
@@ -70,8 +70,9 @@ function res = NRCellSearchSync(config, chModel, ssbIdx, boost, nrbSSB, SNRdB)
     % operating band.
     
     % Configure and generate a waveform containing an SS burst and SIB1
-    wavegenConfig = hSIB1WaveformConfiguration(config);
     [txWaveform,waveInfo] = nrWaveformGenerator(wavegenConfig);
+    tmp = wavegenConfig.PDSCH{1};
+    % wavegenConfig.WindowingPercent , 
     txOfdmInfo = waveInfo.ResourceGrids(1).Info;
     
     % Introduce a beamforming gain by boosting the SNR of one SSB and
@@ -81,6 +82,11 @@ function res = NRCellSearchSync(config, chModel, ssbIdx, boost, nrbSSB, SNRdB)
     
     % Add white Gaussian noise to the waveform
     rng('default'); % Reset the random number generator
+
+    if(guiEnabled)
+        txLamp.Color = "0.00,0.00,0.00";
+    end
+
 
     if (chModel == "rayleigh")
         rayleighch = comm.RayleighChannel( ...
@@ -93,7 +99,6 @@ function res = NRCellSearchSync(config, chModel, ssbIdx, boost, nrbSSB, SNRdB)
             'RandomStream','mt19937ar with seed', ...
             'Seed',22, ...
             'PathGainsOutputPort',true);
-        
         [rxWaveform,~] = rayleighch(txWaveform);
     else
         rxWaveform = awgn(txWaveform, SNRdB-boost,-10*log10(double(txOfdmInfo.Nfft)));
@@ -120,6 +125,11 @@ function res = NRCellSearchSync(config, chModel, ssbIdx, boost, nrbSSB, SNRdB)
     
     scsSSB = hSSBurstSubcarrierSpacing(refBurst.BlockPattern);
     rxOfdmInfo = nrOFDMInfo(nrbSSB,scsSSB,'SampleRate',rxSampleRate);
+
+    if(guiEnabled)
+        txLamp.Color = "1.00,0.00,0.00";
+        rxLamp.Color = "0.00,1.00,0.00";
+    end
     
     % Display spectrogram of received waveform
     figure;
@@ -184,6 +194,11 @@ function res = NRCellSearchSync(config, chModel, ssbIdx, boost, nrbSSB, SNRdB)
     str = sprintf(' Time offset to synchronization block: %%.0f samples (%%.%.0ff ms) \n',floor(log10(rxSampleRate))-3);
     fprintf(str,timingOffset+firstSymbolLength,(timingOffset+firstSymbolLength)/rxSampleRate*1e3);
     
+    if(guiEnabled)
+        rxLamp.Color = "1.00,0.00,0.00";
+        decodeLamp.Color = "0.00,1.00,0.00";
+    end
+
     %% SSS Search
     % The receiver extracts the resource elements associated to the SSS from
     % the received grid and correlates them with each possible SSS sequence
@@ -681,7 +696,7 @@ function res = NRCellSearchSync(config, chModel, ssbIdx, boost, nrbSSB, SNRdB)
     dci = fromBits(dci,dcibits);
     
     % Get PDSCH configuration from cell ID, BCH information, and DCI
-    [pdsch,K_0] = hSIB1PDSCHConfiguration(dci,pdcch.NSizeBWP,initialSystemInfo.DMRSTypeAPosition,csetPattern);
+    [pdsch,K_0] = hSIB1PDSCHConfiguration(dci,pdcch.NSizeBWP,initialSystemInfo.DMRSTypeAPosition,csetPattern, config.Modulation);
     
     % For CORESET pattern 2, the gNodeB can allocate PDSCH in the next slot,
     % which is indicated by the slot offset K_0 signaled by DCI. For more
@@ -787,6 +802,10 @@ function res = NRCellSearchSync(config, chModel, ssbIdx, boost, nrbSSB, SNRdB)
     % Display PDSCH EVM and DL-SCH CRC
     disp([' PDSCH RMS EVM: ' num2str(pdschEVMrms,'%0.3f') '%']);
     disp([' PDSCH CRC: ' num2str(sib1CRC)]);
+
+    if(guiEnabled)
+        decodeLamp.Color = "1.00,0.00,0.00";
+    end
     
     if sib1CRC == 0
         disp(' SIB1 decoding succeeded.');

@@ -8,7 +8,7 @@
 
 %   Copyright 2020-2021 The MathWorks, Inc.
 
-function [pdsch,K_0] = hSIB1PDSCHConfiguration(dci,NSizeBWP,DMRSTypeAPosition,pat)
+function [pdsch,K_0] = hSIB1PDSCHConfiguration(dci,NSizeBWP,DMRSTypeAPosition,pat,modulation)
 
     pdsch = nrPDSCHConfig();
     pdsch.NSizeBWP = [];
@@ -40,7 +40,7 @@ function [pdsch,K_0] = hSIB1PDSCHConfiguration(dci,NSizeBWP,DMRSTypeAPosition,pa
     
     % Configure PDSCH from other relevant rules
     % TS 38.214 Section 5.1.3.1
-    pdsch.Modulation = 'QPSK';
+    pdsch.Modulation = modulation;
     % TS 38.211 Section 7.4.1.1
     pdsch.DMRS.NSCID = 0;
     % TS 38.214 Section 5.1.6.2

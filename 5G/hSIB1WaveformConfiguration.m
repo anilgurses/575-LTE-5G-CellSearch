@@ -82,7 +82,7 @@ function wavegenConfig = hSIB1WaveformConfiguration(config)
     % Configure as many data channels (PDSCH) as SS blocks in burst
     ssSlotPeriod = vertcat(ss(:).SlotPeriodAndOffset);
     enablePDSCH = transmittedBlocks & config.EnableSIB1;
-    pdsch = getWavegenPDSCHConfig(csetNRB,csetPattern,ssBurst.DMRSTypeAPosition,dci,ssSlotPeriod,enablePDSCH);
+    pdsch = getWavegenPDSCHConfig(csetNRB,csetPattern,ssBurst.DMRSTypeAPosition,dci,ssSlotPeriod,enablePDSCH, config.Modulation);
     
     % Configure waveform duration, frequency range, channel bandwidth
     numSubframes = 20;
@@ -251,13 +251,13 @@ end
 
 % Configure SIB1 PDSCH. The length of the input dci, slotPeriod and enabled
 % must be equal to the number of SSB.
-function pdsch = getWavegenPDSCHConfig(csetNRB,csetPattern,dmrsTypeAPosition,dci,ssSlotPeriod,enable)
+function pdsch = getWavegenPDSCHConfig(csetNRB,csetPattern,dmrsTypeAPosition,dci,ssSlotPeriod,enable,modulation)
     
     nch = length(dci);
     pdsch(1:nch) = nrWavegenPDSCHConfig;
     for ch = 1:nch
 
-        [pdschTmp,K_0] = hSIB1PDSCHConfiguration(dci(ch),csetNRB,dmrsTypeAPosition,csetPattern);
+        [pdschTmp,K_0] = hSIB1PDSCHConfiguration(dci(ch),csetNRB,dmrsTypeAPosition,csetPattern, modulation);
         
         % Copy common PDSCH configuration to wavegen object
         pdsch(ch).RNTI = pdschTmp.RNTI;
