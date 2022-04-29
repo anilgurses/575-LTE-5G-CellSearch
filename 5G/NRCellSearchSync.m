@@ -1,4 +1,4 @@
-function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, pathGains, ssbIdx, boost, nrbSSB, SNRdB, guiEnabled, txLamp, rxLamp, decodeLamp)
+function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, pathGains, ssbIdx, boost, nrbSSB, SNRdB, fnRoot, guiEnabled, txLamp, rxLamp, decodeLamp)
 
     %% NR Cell Search and MIB and SIB1 Recovery
     %
@@ -84,13 +84,13 @@ function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, path
     rng('default'); % Reset the random number generator
 
     if(guiEnabled)
-        txLamp.Color = "0.00,0.00,0.00";
+        txLamp.Color = "0.00,1.00,0.00";
     end
 
 
     if (chModel == "rayleigh")
         rayleighch = comm.RayleighChannel( ...
-            'SampleRate',info.SamplingRate, ...
+            'SampleRate',waveInfo.ResourceGrids.Info.SampleRate, ...
             'PathDelays',pathDelays, ...
             'AveragePathGains',pathGains, ...
             'NormalizePathGains',true, ...
@@ -132,7 +132,6 @@ function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, path
     end
     
     % Display spectrogram of received waveform
-    figure;
     nfft = rxOfdmInfo.Nfft;
     spectrogram(rxWaveform(:,1),ones(nfft,1),0,nfft,'centered',rxSampleRate,'yaxis','MinThreshold',-130);
     title('Spectrogram of the Received Waveform')
@@ -402,6 +401,8 @@ function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, path
     else
         commonSCSs = [15 30];
     end
+
+    res = struct();
     
     initialSystemInfo = struct();
     initialSystemInfo.NFrame = mib.systemFrameNumber*2^4 + bit2int(sfn4lsb,4);
@@ -415,6 +416,8 @@ function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, path
     % Display the MIB structure
     disp(' BCH/MIB Content:')
     disp(initialSystemInfo);
+
+    res.initialSystemInfo = initialSystemInfo;
     
     % Check if a CORESET for Type0-PDCCH common search space (CSS) is present,
     % according to TS 38.213 Section 4.1
@@ -574,6 +577,7 @@ function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, path
     c0Carrier.NFrame = initialSystemInfo.NFrame;
     c0Carrier.NCellID = ncellid;
     
+    res.c0Carrier = c0Carrier;
     %%
     % Search for DCI messages. UE decodes the received PDCCH symbols blindly by
     % monitoring all PDCCH candidates for every aggregation level using the
@@ -642,7 +646,10 @@ function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, path
     pdcchRef = nrPDCCH(double(dcicw<0),pdcch.DMRSScramblingID,pdcch.RNTI);
     evm = comm.EVM;
     pdcchEVMrms = evm(pdcchRef,pdcchEqSym);
-    
+
+    res.pdcchEVMrms = pdcchEVMrms;
+    res.dciCRC = dciCRC;
+
     % Display calculated EVM
     disp([' PDCCH RMS EVM: ' num2str(pdcchEVMrms,'%0.3f') '%']);
     disp([' PDCCH CRC: ' num2str(dciCRC)]);
@@ -798,6 +805,9 @@ function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, path
     pdschRef = nrPDSCH(c0Carrier,pdsch,double(cw{1}<0));
     evm = comm.EVM;
     pdschEVMrms = evm(pdschRef,pdschEqSym/sqrt(var(pdschEqSym)));
+
+    res.pdschEVMrms = pdschEVMrms;
+    res.sib1CRC = sib1CRC;
     
     % Display PDSCH EVM and DL-SCH CRC
     disp([' PDSCH RMS EVM: ' num2str(pdschEVMrms,'%0.3f') '%']);
@@ -812,6 +822,10 @@ function res = NRCellSearchSync(wavegenConfig, config, chModel, pathDelays, path
     else
         disp(' SIB1 decoding failed.');
     end
+
+    date = datestr(now,'mmmm-dd-yyyy-HH:MM');
+    fnRoot = sprintf("%s/%s-results.mat",fnRoot,date);
+    save(fnRoot);
     
     %% Appendix
     % This example uses these helper functions:

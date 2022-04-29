@@ -10,6 +10,7 @@ function [spectrumAnalyzer,synchCorrPlot,pdcchConstDiagram] = hSIB1RecoveryExamp
         
         % plot sizing and positioning
         [repositionPlots,plotPositions] = hPlotPositions();
+        
 
         % Received signal spectrum
         spectrumAnalyzer = dsp.SpectrumAnalyzer();
@@ -22,7 +23,7 @@ function [spectrumAnalyzer,synchCorrPlot,pdcchConstDiagram] = hSIB1RecoveryExamp
         if (repositionPlots)
             spectrumAnalyzer.Position = plotPositions(1,:);
         end
-
+        
         % PSS/SSS correlation 
         synchCorrPlot = dsp.ArrayPlot();
         synchCorrPlot.Name = 'PSS/SSS correlation';
@@ -47,7 +48,7 @@ function [spectrumAnalyzer,synchCorrPlot,pdcchConstDiagram] = hSIB1RecoveryExamp
         channelFigure.Name = 'Channel magnitude response';
         channelFigure.NumberTitle = 'off';
         channelFigure.Color = [40 40 40]/255;   
-        channelFigure.Visible = 'off';
+        channelFigure.Visible = 'on';
         if (repositionPlots)
             channelFigure.Position = plotPositions(4,:);      
         end

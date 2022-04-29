@@ -88,10 +88,10 @@ function wavegenConfig = hSIB1WaveformConfiguration(config)
     numSubframes = 20;
     if any(scsSSB == [15 30])
         FR = 'FR1';
-        BW = config.Bandwidth; % Max bandwidth for FR1
+        BW = 100; % Max bandwidth for FR1
     else
         FR = 'FR2';
-        BW = config.Bandwidth; % Max bandwidth for FR2
+        BW = 400; % Max bandwidth for FR2
         if csetPattern == 1
             numSubframes = 25; % Increase waveform duration to ensure all 64 SSB + SIB1 fit
         end
@@ -137,7 +137,7 @@ function [carrier,bwp] = getCommonSCSCarrierAndBWPConfig(ssb,minChanBW)
     % Adjust carrier bandwidth to account for CORESET being located in a
     % multiple of 6 RB from CRB0
     coff = mod(6-(halfCarrierSize+carrier.NStartGrid-c0),6);
-    carrier.NSizeGrid = 2*(halfCarrierSize + coff)+24;
+    carrier.NSizeGrid = 2*(halfCarrierSize + coff);
     
     % Configure BWP for control and data. The carrier bandwidth above
     % ensures the BWP offset is defined in TS 38.213 Tables 13-1 to 13-10

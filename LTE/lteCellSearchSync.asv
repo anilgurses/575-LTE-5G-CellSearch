@@ -1,4 +1,4 @@
-function res = lteCellSearchSync(resBlk,rmc, chModel, snr, guiEnabled, txLamp, rxLamp, decodeLamp, rxSigSpectrum)
+function res = lteCellSearchSync(rmc, chModel, pathDelays, pathGains, snr, fnRoot, guiEnabled, txLamp, rxLamp, decodeLamp)
 
 %% Cell Search, MIB and SIB1 Recovery 
 % This example shows how to fully synchronize, demodulate and decode a live
@@ -97,7 +97,7 @@ sr = info.SamplingRate;     % Sampling rate of generated samples
 separator = repmat('-',1,50);
 % plots
 if (~exist('channelFigure','var') || ~isvalid(channelFigure))
-    channelFigure = figure('Visible','off');        
+    channelFigure = figure('Visible','on');        
 end
 [spectrumAnalyzer,synchCorrPlot,pdcchConstDiagram] = ...
     hSIB1RecoveryExamplePlots(channelFigure,sr);
@@ -110,7 +110,7 @@ pdschEVM.MaximumEVMOutputPort = true;
 % temporarily in the call to lteOFDMInfo to suppress a default value
 % warning (it does not affect the sampling rate).
 enb = struct;                   % eNodeB config structure
-enb.NDLRB = resBlk;                  % Number of resource blocks
+enb.NDLRB = rmc.NDLRB;                  % Number of resource blocks
 ofdmInfo = lteOFDMInfo(setfield(enb,'CyclicPrefix','Normal')); %#ok<SFLD>
 
 if (isempty(eNodeBOutput))
@@ -123,10 +123,10 @@ fprintf('\nPlotting received signal spectrum...\n');
 % Diversity, Air interface we need to make changes here
 
 if (chModel == "rayleigh")
-    rayleighchan = comm.RayleighChannel( ...
+    rayleighch = comm.RayleighChannel( ...
         'SampleRate',info.SamplingRate, ...
-        'PathDelays',[0 1.5e-4], ...
-        'AveragePathGains',[2 3], ...
+        'PathDelays',pathDelays, ...
+        'AveragePathGains',pathGains, ...
         'NormalizePathGains',true, ...
         'MaximumDopplerShift',30, ...
         'DopplerSpectrum',{doppler('Gaussian',0.6),doppler('Flat')}, ...
@@ -134,7 +134,7 @@ if (chModel == "rayleigh")
         'Seed',22, ...
         'PathGainsOutputPort',true);
     
-    [eNodeBOutput,~] = rayleighchan(eNodeBOutput);
+    [eNodeBOutput,~] = rayleighch(eNodeBOutput);
 else
     eNodeBOutput = awgn(eNodeBOutput, snr);
 end
@@ -144,7 +144,9 @@ if(guiEnabled)
 end
 
 spectrumAnalyzer(eNodeBOutput);
-
+specFigHdl = findall(0,'Type','figure','Tag','spcui_scope_framework');
+pthSpectrum = sprintf('%s/fig-spectrum.png', fnRoot);
+saveas(specFigHdl, pthSpectrum);
 
 if (sr~=ofdmInfo.SamplingRate)
     if (sr < ofdmInfo.SamplingRate)
@@ -612,12 +614,13 @@ while (size(rxgrid,2) > 0)
     end
     
     % Update channel estimate plot 
-    figure(channelFigure);
-    surf(abs(hest(:,:,1,1)));
-    hSIB1RecoveryExamplePlots(channelFigure);
-    channelFigure.CurrentAxes.XLim = [0 size(hest,2)+1];
-    channelFigure.CurrentAxes.YLim = [0 size(hest,1)+1];   
-    
+    if (size(rxgrid,2) > 0)
+        figure(channelFigure);
+        surf(abs(hest(:,:,1,1)));
+        hSIB1RecoveryExamplePlots(channelFigure);
+        channelFigure.CurrentAxes.XLim = [0 size(hest,2)+1];
+        channelFigure.CurrentAxes.YLim = [0 size(hest,1)+1];   
+    end
     % Skip 2 frames and try SIB1 decoding again, or terminate if we
     % have less than 2 frames left. 
     if (size(rxgrid,2)>=(L*20))
@@ -635,9 +638,8 @@ if(guiEnabled)
 end
 
 date = datestr(now,'mmmm-dd-yyyy-HH:MM');
-fname = sprintf("%s-result.mat",date);
-
-save("")
+fnRoot = sprintf("%s/%s-results.mat",fnRoot,date);
+save(fnRoot);
 
 end
 %% Appendix

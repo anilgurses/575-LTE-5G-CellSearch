@@ -1,4 +1,4 @@
-function res = lteCellSearchSync(resBlk,rmc, chModel, pathDelays, pathGains, snr, guiEnabled, txLamp, rxLamp, decodeLamp)
+function res = lteCellSearchSync(rmc, chModel, pathDelays, pathGains, snr, fnRoot, guiEnabled, txLamp, rxLamp, decodeLamp)
 
 %% Cell Search, MIB and SIB1 Recovery 
 % This example shows how to fully synchronize, demodulate and decode a live
@@ -110,7 +110,7 @@ pdschEVM.MaximumEVMOutputPort = true;
 % temporarily in the call to lteOFDMInfo to suppress a default value
 % warning (it does not affect the sampling rate).
 enb = struct;                   % eNodeB config structure
-enb.NDLRB = resBlk;                  % Number of resource blocks
+enb.NDLRB = rmc.NDLRB;                  % Number of resource blocks
 ofdmInfo = lteOFDMInfo(setfield(enb,'CyclicPrefix','Normal')); %#ok<SFLD>
 
 if (isempty(eNodeBOutput))
@@ -144,7 +144,9 @@ if(guiEnabled)
 end
 
 spectrumAnalyzer(eNodeBOutput);
-
+specFigHdl = findall(0,'Type','figure','Tag','spcui_scope_framework');
+pthSpectrum = sprintf('%s/fig-spectrum.png', fnRoot);
+saveas(specFigHdl, pthSpectrum);
 
 if (sr~=ofdmInfo.SamplingRate)
     if (sr < ofdmInfo.SamplingRate)
@@ -246,6 +248,8 @@ enb.NCellID = enbMax.NCellID;
 % Plot PSS/SSS correlation and threshold
 synchCorrPlot.YLimits = [0 max([corr{1}; threshold])*1.1];
 synchCorrPlot([corr{1} threshold*ones(size(corr{1}))]);
+
+
 
 % Perform timing synchronization
 fprintf('Timing offset to frame start: %d samples\n',offset);
@@ -636,9 +640,8 @@ if(guiEnabled)
 end
 
 date = datestr(now,'mmmm-dd-yyyy-HH:MM');
-fname = sprintf("Results/LTE/%s-result.mat",date);
-
-save(fname);
+fnRoot = sprintf("%s/%s-results.mat",fnRoot,date);
+save(fnRoot);
 
 end
 %% Appendix
